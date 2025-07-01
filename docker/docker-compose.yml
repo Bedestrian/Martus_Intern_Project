@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  nanomq:
+    image: emqx/nanomq:latest
+    container_name: nanomq
+    #environment: # Add any necessary environment variables here if needed
+      #NANOMQ_CONF: /nanoMQ/nanomq.conf
+    ports:
+      - "1883:1883"   # Default MQTT port
+      - "8081:8081"
+    networks:
+      - app-network
+
+  mediamtx:
+    image: bluenviron/mediamtx:latest
+    container_name: mediamtx
+    ports:
+      - "8554:8554"  # RTSP
+      - "1935:1935"  # RTMP
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
