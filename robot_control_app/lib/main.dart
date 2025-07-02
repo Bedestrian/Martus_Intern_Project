@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:robot_control_app/pages/command_page.dart';
 import 'pages/home_page.dart';
 
 void main() {
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -15,9 +16,15 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
           seedColor: Colors.deepPurple.shade800,
+          brightness: Brightness.dark,
         ),
+        brightness: Brightness.dark,
       ),
-      home: const HomePage(title: 'Robot Control'),
+      initialRoute: '/',
+      routes: {
+        '/': (context) => HomePage(),
+        '/control': (context) => CommandPage(),
+      },
     );
   }
 }

@@ -1,29 +1,25 @@
 import 'package:flutter/material.dart';
-import 'camera_page.dart';
 
 class HomePage extends StatelessWidget {
-  const HomePage({super.key, required this.title});
-  final String title;
+  const HomePage({super.key});
+  final String title = "Select a Robot";
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      body: Center(
-        //child: Text('Hello, robot 👋'),
-        child: TextButton(
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) {
-                  return const CameraPage();
-                },
-              ),
-            );
-          },
-          child: const Text('Next'),
-        ),
+      appBar: AppBar(
+        title: Text(title),
+        backgroundColor: Colors.deepPurple.shade800,
+      ),
+      body: ListView(
+        children: [
+          ListTile(
+            title: Text('Robot 1'),
+            onTap: () {
+              Navigator.pushNamed(context, '/control', arguments: 'Robot 1');
+            },
+          ),
+        ],
       ),
     );
   }
