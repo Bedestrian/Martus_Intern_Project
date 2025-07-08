@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../widgets/CamerasWidget.dart';
-import '../widgets/CommandWidget.dart';
+import '../widgets/cameras_widget.dart';
+import '../widgets/command_widget.dart';
 
 class CommandPage extends StatelessWidget {
   const CommandPage({super.key});
@@ -8,13 +8,16 @@ class CommandPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final String robotName =
-        ModalRoute.of(context)?.settings.arguments as String ?? 'Unknown Robot';
+        ModalRoute.of(context)?.settings.arguments as String;
 
     return DefaultTabController(
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: Text('Control: $robotName'),
+          title: Text(
+            'Control: $robotName',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
           backgroundColor: Colors.deepPurple.shade900,
           bottom: TabBar(
             tabs: [
