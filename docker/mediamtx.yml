@@ -1,0 +1,6 @@
+server:
+  logLevel: info
+
+paths:
+  mystream:
+    source: rtmp

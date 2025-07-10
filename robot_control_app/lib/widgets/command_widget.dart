@@ -31,7 +31,7 @@ class CommandWidget extends StatelessWidget {
 
   Container commandButtons(CommandController controller) {
     return Container(
-      height: 150,
+      height: 200,
       padding: const EdgeInsets.symmetric(horizontal: 10),
       child: ListView.builder(
         itemCount: controller.commands.length,
