@@ -3,10 +3,19 @@ import 'package:provider/provider.dart';
 import 'package:robot_control_app/controllers/command_controller.dart';
 import 'package:robot_control_app/pages/command_page.dart';
 import 'pages/home_page.dart';
+import 'services/mqtt_service.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  final mqttService = MqttService('192.168.0.119'); // your MQTT broker IP
+  await mqttService.connect();
+
   runApp(
-    ChangeNotifierProvider(create: (_) => CommandController(), child: MyApp()),
+    ChangeNotifierProvider(
+      create: (_) => CommandController(mqttService),
+      child: MyApp(),
+    ),
   );
 }
 

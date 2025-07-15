@@ -40,7 +40,7 @@ class CommandWidget extends StatelessWidget {
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 4.0),
             child: ElevatedButton(
-              onPressed: command.command,
+              onPressed: () => controller.sendCommand(command),
               style: ElevatedButton.styleFrom(
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(30.0),
