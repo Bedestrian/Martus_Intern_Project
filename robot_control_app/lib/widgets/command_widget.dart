@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:robot_control_app/controllers/command_controller.dart';
+import 'package:robot_control_app/models/commands_model.dart';
 
 class CommandWidget extends StatelessWidget {
   final String robotName;
@@ -14,7 +15,7 @@ class CommandWidget extends StatelessWidget {
     return ListView(
       children: [
         Column(children: [commandText(), commandButtons(controller)]),
-        ttsField(),
+        ttsField(controller),
       ],
     );
   }
@@ -61,7 +62,7 @@ class CommandWidget extends StatelessWidget {
   }
 
   //text field for send tts messages to the robot
-  Padding ttsField() {
+  Padding ttsField(CommandController controller) {
     return Padding(
       padding: const EdgeInsets.all(10.0),
       child: Row(
@@ -81,7 +82,12 @@ class CommandWidget extends StatelessWidget {
             icon: Icon(Icons.send),
             onPressed: () {
               final message = ttsController.text;
-              //TO-DO add mgtt message send
+              CommandsModel command = CommandsModel(
+                name: 'TTS',
+                topic: 'robot/tts',
+                payload: message,
+              );
+              controller.sendCommand(command);
               ttsController.clear();
             },
           ),
