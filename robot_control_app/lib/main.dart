@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:robot_control_app/controllers/command_controller.dart';
 import 'package:robot_control_app/pages/command_page.dart';
+import 'package:robot_control_app/services/gamepad_service.dart';
 import 'pages/home_page.dart';
 import 'services/mqtt_service.dart';
 
@@ -10,10 +11,17 @@ void main() async {
 
   final mqttService = MqttService('192.168.0.119'); // your MQTT broker IP
   await mqttService.connect();
+  final commandController = CommandController(mqttService);
+  final gamepadService = GamepadService(commandController);
+  await gamepadService.start();
 
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => CommandController(mqttService),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => commandController),
+        ChangeNotifierProvider(create: (_) => gamepadService),
+      ],
+
       child: MyApp(),
     ),
   );
