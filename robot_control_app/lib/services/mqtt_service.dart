@@ -25,16 +25,41 @@ class MqttService {
     } catch (e) {
       print('MQTT connection failed: $e');
       client.disconnect();
+      retryConnect();
+      return;
+    }
+
+    final state = client.connectionStatus?.state;
+    if (state == MqttConnectionState.connected) {
+      print("MQTT Connected");
+    } else {
+      print('MQTT Connection unseccessful');
+      retryConnect();
     }
   }
 
+  void retryConnect() {
+    Future.delayed(const Duration(seconds: 5), () {
+      final state = client.connectionStatus?.state;
+      if (state != MqttConnectionState.connected) {
+        print('Retrying MQTT connection (state: $state)...');
+        connect();
+      } else {
+        print('MQTT is already connected.');
+      }
+    });
+  }
+
   void publish(String topic, String message) {
-    final builder = MqttClientPayloadBuilder();
-    builder.addString(message);
+    final state = client.connectionStatus?.state;
+    if (state == MqttConnectionState?.connected) {
+      final builder = MqttClientPayloadBuilder();
+      builder.addString(message);
 
-    client.publishMessage(topic, MqttQos.atLeastOnce, builder.payload!);
+      client.publishMessage(topic, MqttQos.atLeastOnce, builder.payload!);
 
-    print('published to $topic: $message');
+      print('published to $topic: $message');
+    }
   }
 
   void disconnect() {

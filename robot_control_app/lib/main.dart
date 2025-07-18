@@ -10,10 +10,8 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   final mqttService = MqttService('192.168.0.119'); // your MQTT broker IP
-  await mqttService.connect();
   final commandController = CommandController(mqttService);
   final gamepadService = GamepadService(commandController);
-  await gamepadService.start();
 
   runApp(
     MultiProvider(
@@ -25,6 +23,9 @@ void main() async {
       child: MyApp(),
     ),
   );
+
+  await mqttService.connect();
+  await gamepadService.start();
 }
 
 class MyApp extends StatelessWidget {
