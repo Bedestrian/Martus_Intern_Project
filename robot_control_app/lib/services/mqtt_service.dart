@@ -9,8 +9,8 @@ class MqttService {
     client.port = port;
     client.keepAlivePeriod = 20;
     client.autoReconnect = true;
-    client.onConnected = () => print('MQTT Connected');
-    client.onDisconnected = () => print('MQTT Disconnected');
+    //client.onConnected = () => print('MQTT Connected');
+    //client.onDisconnected = () => print('MQTT Disconnected');
   }
 
   Future<void> connect() async {
@@ -23,7 +23,7 @@ class MqttService {
     try {
       await client.connect();
     } catch (e) {
-      print('MQTT connection failed: $e');
+      //print('MQTT connection failed: $e');
       client.disconnect();
       retryConnect();
       return;
@@ -52,13 +52,13 @@ class MqttService {
 
   void publish(String topic, String message) {
     final state = client.connectionStatus?.state;
-    if (state == MqttConnectionState?.connected) {
+    if (state == MqttConnectionState.connected) {
       final builder = MqttClientPayloadBuilder();
       builder.addString(message);
 
       client.publishMessage(topic, MqttQos.atLeastOnce, builder.payload!);
 
-      print('published to $topic: $message');
+      //print('published to $topic: $message');
     }
   }
 

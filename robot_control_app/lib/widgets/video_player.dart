@@ -17,32 +17,50 @@ class VideoPlayer extends StatefulWidget {
 
 class _VideoPlayerState extends State<VideoPlayer> {
   late VlcPlayerController vlcPlayerController;
+  bool hasError = false;
 
   @override
   void initState() {
     super.initState();
+    initPlayer();
+  }
 
-    vlcPlayerController = VlcPlayerController.network(
-      widget.streamUrl,
-      autoPlay: true,
-      options: VlcPlayerOptions(),
-    );
+  void initPlayer() {
+    try {
+      vlcPlayerController = VlcPlayerController.network(
+        widget.streamUrl,
+        hwAcc: HwAcc.full,
+        autoPlay: true,
+        options: VlcPlayerOptions(),
+      );
+    } catch (e) {
+      //print(e);
+      hasError = true;
+    }
   }
 
   @override
   void dispose() {
+    vlcPlayerController.stop();
     vlcPlayerController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    if (hasError) {
+      return Container(
+        height: 200,
+        color: Colors.black,
+        child: const Center(child: Text('Stream unavailable')),
+      );
+    }
     return Container(
-      color: Color.fromARGB(255, 1, 144, 176),
+      color: Color.fromARGB(255, 112, 112, 112),
       child: VlcPlayer(
         controller: vlcPlayerController,
         aspectRatio: widget.aspectRatio,
-        placeholder: Container(color: Colors.black),
+        placeholder: const Center(child: CircularProgressIndicator()),
       ),
     );
   }

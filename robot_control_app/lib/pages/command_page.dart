@@ -66,7 +66,7 @@ class _CommandPageState extends State<CommandPage>
         ),
         backgroundColor: Colors.deepPurple.shade900,
         bottom: TabBar(
-          controller: _tabController, // ✅ Use your controller here
+          controller: _tabController, //  Use your controller here
           tabs: const [
             Tab(icon: Icon(Icons.gamepad)),
             Tab(icon: Icon(Icons.videocam_outlined)),
@@ -74,9 +74,9 @@ class _CommandPageState extends State<CommandPage>
         ),
       ),
       body: GestureDetector(
-        onTap: () => FocusScope.of(context).unfocus(),
+        //onTap: () => FocusScope.of(context).unfocus(),
         child: TabBarView(
-          controller: _tabController, // ✅ And here too
+          controller: _tabController, //  And here too
           children: [
             CommandWidget(robotName: robotName),
             CamerasWidget(robotName: robotName),

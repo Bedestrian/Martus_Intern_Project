@@ -19,6 +19,10 @@ class HomePage extends StatelessWidget {
               Navigator.pushNamed(context, '/control', arguments: 'Robot 1');
             },
           ),
+          ElevatedButton(
+            child: Text('Open Config'),
+            onPressed: () => Navigator.pushNamed(context, '/config'),
+          ),
         ],
       ),
     );

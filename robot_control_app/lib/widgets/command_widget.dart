@@ -65,7 +65,7 @@ class CommandWidget extends StatelessWidget {
           children: [
             Expanded(
               child: TextField(
-                autofocus: true,
+                //autofocus: true,
                 controller: ttsController,
                 decoration: InputDecoration(
                   border: OutlineInputBorder(

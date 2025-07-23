@@ -11,11 +11,18 @@ class CamerasWidget extends StatefulWidget {
 }
 
 class _CamerasWidgetState extends State<CamerasWidget> {
+  final String url = 'rtsp://192.168.0.119:8554/live/test';
+
   @override
   Widget build(BuildContext context) {
     return ListView(
       padding: EdgeInsets.all(8),
-      children: [VideoPlayer(streamUrl: 'rtsp://192.168.0.119:8554/live/test')],
+      children: [
+        VideoPlayer(
+          key: ValueKey('video-player-${widget.robotName}'),
+          streamUrl: url,
+        ),
+      ],
     );
   }
 }
