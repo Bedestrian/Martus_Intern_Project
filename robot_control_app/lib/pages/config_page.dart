@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:robot_control_app/models/commands_model.dart';
 import 'package:robot_control_app/models/camera_model.dart';
+
 import 'package:robot_control_app/services/config_service.dart';
+
+import '../widgets/settings_editor.dart';
 
 class ConfigPage extends StatefulWidget {
   const ConfigPage({super.key});
@@ -61,16 +64,11 @@ class _ConfigPageState extends State<ConfigPage> {
   }
 
   Future<void> addCamera() async {
-    final cam = CameraModel(
-      name: camNameCtrl.text,
-      url: camUrlCtrl.text,
-      type: camTypeCtrl.text,
-    );
+    final cam = CameraModel(url: camUrlCtrl.text, type: camTypeCtrl.text);
     setState(() {
       cameras.add(cam);
     });
     await configService.saveCameras(cameras);
-    camNameCtrl.clear();
     camUrlCtrl.clear();
     camTypeCtrl.clear();
   }
@@ -91,6 +89,8 @@ class _ConfigPageState extends State<ConfigPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            SettingsEditor(),
+            const Divider(),
             Text('Add Command:', style: Theme.of(context).textTheme.titleLarge),
             TextField(
               controller: nameCtrl,
@@ -143,7 +143,6 @@ class _ConfigPageState extends State<ConfigPage> {
               final i = entry.key;
               final cam = entry.value;
               return ListTile(
-                title: Text(cam.name),
                 subtitle: Text('${cam.type} | ${cam.url}'),
                 trailing: IconButton(
                   icon: Icon(Icons.delete),

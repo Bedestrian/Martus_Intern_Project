@@ -16,7 +16,7 @@ void main() async {
     DeviceOrientation.landscapeRight,
   ]);
 
-  final mqttService = MqttService('192.168.0.119'); // your MQTT broker IP
+  final mqttService = MqttService(); // your MQTT broker IP
   final commandController = CommandController(mqttService);
   final gamepadService = GamepadService(commandController);
 

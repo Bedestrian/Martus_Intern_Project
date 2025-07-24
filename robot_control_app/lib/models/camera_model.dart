@@ -1,19 +1,12 @@
 class CameraModel {
-  String name;
+  String type; // values: 'front', 'rear', 'top', 'other'
   String url;
-  String type; // e.g. "front", "rear", "top"
 
-  CameraModel({required this.name, required this.url, required this.type});
+  CameraModel({required this.type, required this.url});
 
   factory CameraModel.fromJson(Map<String, dynamic> json) {
-    return CameraModel(
-      name: json['name'],
-      url: json['url'],
-      type: json['type'],
-    );
+    return CameraModel(type: json['type'], url: json['url']);
   }
 
-  Map<String, dynamic> toJson() {
-    return {'name': name, 'url': url, 'type': type};
-  }
+  Map<String, dynamic> toJson() => {'type': type, 'url': url};
 }

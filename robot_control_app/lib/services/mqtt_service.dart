@@ -1,12 +1,16 @@
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
+import 'package:robot_control_app/models/settings_model.dart';
+import 'package:robot_control_app/services/config_service.dart';
 
 class MqttService {
-  final MqttServerClient client;
+  late MqttServerClient client;
+  late SettingsModel settings;
 
-  MqttService(String serverIp, {int port = 1883})
-    : client = MqttServerClient(serverIp, 'robot_controller_client') {
-    client.port = port;
+  Future<void> init() async {
+    settings = await ConfigService().loadSettings();
+    client = MqttServerClient(settings.mqttIp, 'robot_controller_client');
+    client.port = settings.mqttPort;
     client.keepAlivePeriod = 20;
     client.autoReconnect = true;
     //client.onConnected = () => print('MQTT Connected');
@@ -14,6 +18,7 @@ class MqttService {
   }
 
   Future<void> connect() async {
+    await init();
     final connMessage = MqttConnectMessage()
         .withClientIdentifier('robot_controller')
         .startClean();
