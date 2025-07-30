@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:robot_control_app/models/camera_model.dart';
 import 'package:robot_control_app/services/config_service.dart';
-import 'package:robot_control_app/widgets/video_player_widget.dart'; // Use the revised player
+import 'package:robot_control_app/widgets/video_player_widget.dart';
 
 class CamerasWidget extends StatefulWidget {
   final String robotName;
@@ -32,11 +32,9 @@ class _CamerasWidgetState extends State<CamerasWidget> {
     }
   }
 
-  // Helper to safely get a camera by type
   CameraModel _getCamera(String type) {
     return _cameras.firstWhere(
       (cam) => cam.type == type,
-      // Return an empty model if not found to prevent crashes
       orElse: () => CameraModel(type: type, url: ''),
     );
   }
@@ -47,28 +45,34 @@ class _CamerasWidgetState extends State<CamerasWidget> {
       return const Center(child: CircularProgressIndicator());
     }
 
-    // Get cameras safely
     final front = _getCamera('front');
     final rear = _getCamera('rear');
     final top = _getCamera('top');
-    final other = _getCamera('other');
 
-    return GridView.count(
-      padding: const EdgeInsets.all(8),
-      crossAxisCount: 2, // 2 cameras per row
-      childAspectRatio: 16 / 9,
-      crossAxisSpacing: 8,
-      mainAxisSpacing: 8,
-      children: [
-        _buildCameraView(front, 'Front'),
-        _buildCameraView(rear, 'Rear'),
-        _buildCameraView(top, 'Top Down'),
-        _buildCameraView(other, 'Other'),
-      ],
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Row(
+        children: [
+          Expanded(
+            flex: 2, // Takes up 2/3 of the space
+            child: Column(
+              children: [
+                Expanded(child: _buildCameraView(front, 'Front View')),
+                const SizedBox(height: 8),
+                Expanded(child: _buildCameraView(rear, 'Rear View')),
+              ],
+            ),
+          ),
+          Expanded(
+            flex: 1, // Takes up 1/3 of the space
+            child: _buildCameraView(top, 'Top Down View'),
+          ),
+          const SizedBox(width: 8),
+        ],
+      ),
     );
   }
 
-  // Helper widget to build each camera cell
   Widget _buildCameraView(CameraModel camera, String title) {
     return Container(
       decoration: BoxDecoration(

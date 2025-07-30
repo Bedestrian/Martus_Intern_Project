@@ -19,16 +19,21 @@ class _ConfigPageState extends State<ConfigPage> {
   bool _isLoading = true;
 
   final ConfigService _configService = ConfigService();
+
   final TextEditingController _nameCtrl = TextEditingController();
   final TextEditingController _topicCtrl = TextEditingController();
   final TextEditingController _payloadCtrl = TextEditingController();
-  final TextEditingController _camNameCtrl = TextEditingController();
-  final TextEditingController _camUrlCtrl = TextEditingController();
-  final TextEditingController _camTypeCtrl = TextEditingController();
+
+  late final TextEditingController _frontCamCtrl;
+  late final TextEditingController _rearCamCtrl;
+  late final TextEditingController _topCamCtrl;
 
   @override
   void initState() {
     super.initState();
+    _frontCamCtrl = TextEditingController();
+    _rearCamCtrl = TextEditingController();
+    _topCamCtrl = TextEditingController();
     _loadData();
   }
 
@@ -37,8 +42,9 @@ class _ConfigPageState extends State<ConfigPage> {
     _nameCtrl.dispose();
     _topicCtrl.dispose();
     _payloadCtrl.dispose();
-    _camUrlCtrl.dispose();
-    _camTypeCtrl.dispose();
+    _frontCamCtrl.dispose();
+    _rearCamCtrl.dispose();
+    _topCamCtrl.dispose();
     super.dispose();
   }
 
@@ -48,7 +54,9 @@ class _ConfigPageState extends State<ConfigPage> {
     if (mounted) {
       setState(() {
         _commands = cmds;
-        _cameras = cams;
+        _frontCamCtrl.text = cams.firstWhere((c) => c.type == 'front').url;
+        _rearCamCtrl.text = cams.firstWhere((c) => c.type == 'rear').url;
+        _topCamCtrl.text = cams.firstWhere((c) => c.type == 'top').url;
         _isLoading = false;
       });
     }
@@ -92,21 +100,19 @@ class _ConfigPageState extends State<ConfigPage> {
     });
   }
 
-  Future<void> _addCamera() async {
-    final cam = CameraModel(url: _camUrlCtrl.text, type: _camTypeCtrl.text);
-    setState(() {
-      _cameras.add(cam);
-    });
-    await _configService.saveCameras(_cameras);
-    _camUrlCtrl.clear();
-    _camTypeCtrl.clear();
-  }
+  Future<void> _saveCameras() async {
+    final updatedCameras = [
+      CameraModel(type: 'front', url: _frontCamCtrl.text.trim()),
+      CameraModel(type: 'rear', url: _rearCamCtrl.text.trim()),
+      CameraModel(type: 'top', url: _topCamCtrl.text.trim()),
+    ];
+    await _configService.saveCameras(updatedCameras);
 
-  Future<void> _deleteCamera(int index) async {
-    setState(() {
-      _cameras.removeAt(index);
-    });
-    await _configService.saveCameras(_cameras);
+    if (mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Camera settings saved!')));
+    }
   }
 
   @override
@@ -186,45 +192,44 @@ class _ConfigPageState extends State<ConfigPage> {
                   }),
 
                   const Divider(height: 40),
+                  // Camera Editor Section
                   Text(
-                    'Add Camera:',
-                    style: Theme.of(context).textTheme.titleLarge,
+                    'Manage Cameras',
+                    style: Theme.of(context).textTheme.headlineSmall,
                   ),
+                  const SizedBox(height: 16),
                   TextField(
-                    controller: _camNameCtrl,
-                    decoration: InputDecoration(labelText: 'Name'),
-                  ),
-                  TextField(
-                    controller: _camUrlCtrl,
-                    decoration: InputDecoration(labelText: 'Stream URL'),
-                  ),
-                  TextField(
-                    controller: _camTypeCtrl,
-                    decoration: InputDecoration(
-                      labelText: 'Type (front/rear/top)',
+                    controller: _frontCamCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Front Camera URL',
+                      border: OutlineInputBorder(),
                     ),
                   ),
-                  ElevatedButton(
-                    onPressed: _addCamera,
-                    child: Text('Add Camera'),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: _rearCamCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Rear Camera URL',
+                      border: OutlineInputBorder(),
+                    ),
                   ),
-
-                  const SizedBox(height: 20),
-                  Text(
-                    'Cameras:',
-                    style: Theme.of(context).textTheme.titleLarge,
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: _topCamCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Top Down Camera URL',
+                      border: OutlineInputBorder(),
+                    ),
                   ),
-                  ..._cameras.asMap().entries.map((entry) {
-                    final i = entry.key;
-                    final cam = entry.value;
-                    return ListTile(
-                      subtitle: Text('${cam.type} | ${cam.url}'),
-                      trailing: IconButton(
-                        icon: Icon(Icons.delete),
-                        onPressed: () => _deleteCamera(i),
-                      ),
-                    );
-                  }),
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.save),
+                    label: const Text('Save Camera Settings'),
+                    onPressed: _saveCameras,
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                  ),
                 ],
               ),
             ),
