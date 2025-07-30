@@ -4,19 +4,39 @@ import '../services/mqtt_service.dart';
 import '../services/config_service.dart';
 
 class CommandController extends ChangeNotifier {
-  final List<CommandsModel> _commands = [];
-
-  final MqttService mqttService;
+  final MqttService _mqttService;
   final ConfigService _configService = ConfigService();
-
-  CommandController(this.mqttService) {
-    _loadCommands();
-  }
+  final List<CommandsModel> _commands = [];
 
   List<CommandsModel> get commands => _commands;
 
+  // Constructor is now clean and only takes dependencies.
+  CommandController(this._mqttService);
+
+  // This method is now called explicitly from main.dart after the app starts.
+  Future<void> loadCommands() async {
+    final loaded = await _configService.loadCommands();
+    if (loaded.isNotEmpty) {
+      _commands.clear();
+      _commands.addAll(loaded);
+    } else {
+      // Populate with defaults only if file is missing/empty.
+      _commands.addAll([
+        CommandsModel(name: '360 Spin', topic: 'robot/motion', payload: 'spin'),
+        CommandsModel(
+          name: 'Wave High',
+          topic: 'robot/action',
+          payload: 'wave',
+        ),
+        CommandsModel(name: 'Nod Yes', topic: 'robot/action', payload: 'nod'),
+      ]);
+      await _saveCommands(); // Save defaults if they were loaded.
+    }
+    notifyListeners(); // Notify UI that commands are ready.
+  }
+
   void sendCommand(CommandsModel command) {
-    mqttService.publish(command.topic, command.payload);
+    _mqttService.publish(command.topic, command.payload);
   }
 
   void addCommand(CommandsModel command) {
@@ -29,31 +49,6 @@ class CommandController extends ChangeNotifier {
     _commands.remove(command);
     notifyListeners();
     _saveCommands();
-  }
-
-  Future<void> _loadCommands() async {
-    final loaded = await _configService.loadCommands();
-    if (loaded.isNotEmpty) {
-      _commands.clear();
-      _commands.addAll(loaded);
-      notifyListeners();
-    } else {
-      //pulate with defaults only if file missing/empty
-      _commands.addAll([
-        CommandsModel(name: '360', topic: 'robot/motion', payload: 'spin'),
-        CommandsModel(
-          name: 'forward',
-          topic: 'robot/motion',
-          payload: 'forward',
-        ),
-        CommandsModel(
-          name: 'Wave High',
-          topic: 'robot/action',
-          payload: 'wave',
-        ),
-      ]);
-      _saveCommands();
-    }
   }
 
   Future<void> _saveCommands() async {

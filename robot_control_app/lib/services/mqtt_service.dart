@@ -1,73 +1,71 @@
+import 'package:flutter/foundation.dart';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
 import 'package:robot_control_app/models/settings_model.dart';
 import 'package:robot_control_app/services/config_service.dart';
 
-class MqttService {
-  late MqttServerClient client;
-  late SettingsModel settings;
+enum MqttConnectionState { connected, disconnected, connecting }
 
-  Future<void> init() async {
-    settings = await ConfigService().loadSettings();
-    client = MqttServerClient(settings.mqttIp, 'robot_controller_client');
-    client.port = settings.mqttPort;
-    client.keepAlivePeriod = 20;
-    client.autoReconnect = true;
-    //client.onConnected = () => print('MQTT Connected');
-    //client.onDisconnected = () => print('MQTT Disconnected');
+class MqttService with ChangeNotifier {
+  late MqttServerClient _client;
+  late SettingsModel _settings;
+  MqttConnectionState _connectionState = MqttConnectionState.disconnected;
+
+  MqttConnectionState get connectionState => _connectionState;
+
+  void _updateConnectionState(MqttConnectionState state) {
+    _connectionState = state;
+    print('MQTT State: $_connectionState');
+    notifyListeners();
+  }
+
+  Future<void> _initialize() async {
+    _settings = await ConfigService().loadSettings();
+    _client = MqttServerClient(_settings.mqttIp, 'robot_controller_client');
+    _client.port = _settings.mqttPort;
+    _client.keepAlivePeriod = 20;
+    _client.autoReconnect = true;
+
+    // Set up listeners BEFORE connecting.
+    _client.onConnected = () =>
+        _updateConnectionState(MqttConnectionState.connected);
+    _client.onDisconnected = () =>
+        _updateConnectionState(MqttConnectionState.disconnected);
+    _client.onAutoReconnect = () =>
+        _updateConnectionState(MqttConnectionState.connecting);
+    _client.onAutoReconnected = () =>
+        _updateConnectionState(MqttConnectionState.connected);
   }
 
   Future<void> connect() async {
-    await init();
+    await _initialize();
+
     final connMessage = MqttConnectMessage()
         .withClientIdentifier('robot_controller')
         .startClean();
-
-    client.connectionMessage = connMessage;
+    _client.connectionMessage = connMessage;
 
     try {
-      await client.connect();
+      _updateConnectionState(MqttConnectionState.connecting);
+      await _client.connect();
     } catch (e) {
-      //print('MQTT connection failed: $e');
-      client.disconnect();
-      retryConnect();
-      return;
+      print('MQTT connection failed: $e');
+      _client.disconnect();
+      _updateConnectionState(MqttConnectionState.disconnected);
     }
-
-    final state = client.connectionStatus?.state;
-    if (state == MqttConnectionState.connected) {
-      print("MQTT Connected");
-    } else {
-      print('MQTT Connection unseccessful');
-      retryConnect();
-    }
-  }
-
-  void retryConnect() {
-    Future.delayed(const Duration(seconds: 5), () {
-      final state = client.connectionStatus?.state;
-      if (state != MqttConnectionState.connected) {
-        print('Retrying MQTT connection (state: $state)...');
-        connect();
-      } else {
-        print('MQTT is already connected.');
-      }
-    });
   }
 
   void publish(String topic, String message) {
-    final state = client.connectionStatus?.state;
-    if (state == MqttConnectionState.connected) {
+    if (_connectionState == MqttConnectionState.connected) {
       final builder = MqttClientPayloadBuilder();
       builder.addString(message);
-
-      client.publishMessage(topic, MqttQos.atLeastOnce, builder.payload!);
-
-      //print('published to $topic: $message');
+      _client.publishMessage(topic, MqttQos.atLeastOnce, builder.payload!);
+    } else {
+      print('Cannot publish, MQTT not connected.');
     }
   }
 
   void disconnect() {
-    client.disconnect();
+    _client.disconnect();
   }
 }

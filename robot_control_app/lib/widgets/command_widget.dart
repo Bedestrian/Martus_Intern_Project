@@ -1,97 +1,165 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:robot_control_app/controllers/command_controller.dart';
+import 'package:robot_control_app/models/camera_model.dart';
 import 'package:robot_control_app/models/commands_model.dart';
+import 'package:robot_control_app/services/config_service.dart';
+import 'package:robot_control_app/services/gamepad_service.dart';
+import 'package:robot_control_app/widgets/video_player_widget.dart';
 
-class CommandWidget extends StatelessWidget {
+class CommandWidget extends StatefulWidget {
   final String robotName;
-  final TextEditingController ttsController = TextEditingController();
-  CommandWidget({super.key, required this.robotName});
+  const CommandWidget({super.key, required this.robotName});
+
+  @override
+  State<CommandWidget> createState() => _CommandWidgetState();
+}
+
+class _CommandWidgetState extends State<CommandWidget> {
+  // State for this widget
+  late final TextEditingController _ttsController;
+  final ConfigService _configService = ConfigService();
+  String _frontCameraUrl = '';
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _ttsController = TextEditingController();
+    _loadCameraConfig();
+  }
+
+  @override
+  void dispose() {
+    _ttsController.dispose(); // IMPORTANT: Dispose of controllers
+    super.dispose();
+  }
+
+  // Load data once when the widget is created
+  Future<void> _loadCameraConfig() async {
+    final cameras = await _configService.loadCameras();
+    // Safely find the front camera
+    final frontCamera = cameras.firstWhere(
+      (cam) => cam.type == 'front',
+      orElse: () => CameraModel(type: 'front', url: ''),
+    );
+    if (mounted) {
+      setState(() {
+        _frontCameraUrl = frontCamera.url;
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _sendTtsMessage() {
+    if (_ttsController.text.isNotEmpty) {
+      // Use context.read inside a function since we don't need to rebuild
+      final commandController = context.read<CommandController>();
+      commandController.sendCommand(
+        CommandsModel(
+          name: 'TTS',
+          topic: 'robot/tts',
+          payload: _ttsController.text,
+        ),
+      );
+      _ttsController.clear();
+      FocusScope.of(context).unfocus();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final controller = Provider.of<CommandController>(context);
+    // Use context.watch to listen for changes in providers
+    final commandController = context.watch<CommandController>();
+    final gamepadService = context.watch<GamepadService>();
+
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
     return Column(
       children: [
-        commandText(),
-        Expanded(child: commandButtons(controller)),
-        SafeArea(child: ttsField(controller)),
-      ],
-    );
-  }
-
-  Padding commandText() {
-    return Padding(
-      padding: const EdgeInsets.all(5.0),
-      child: Text(
-        'Commads',
-        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-      ),
-    );
-  }
-
-  ListView commandButtons(CommandController controller) {
-    return ListView.builder(
-      padding: const EdgeInsets.all(10),
-      itemCount: controller.commands.length,
-      itemBuilder: (BuildContext context, int index) {
-        final command = controller.commands[index];
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 3.0),
-          child: ElevatedButton(
-            onPressed: () => controller.sendCommand(command),
-            style: ElevatedButton.styleFrom(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(30.0),
-              ),
-              elevation: 4,
-              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-            ),
-
-            child: Text(command.name),
-          ),
-        );
-      },
-    );
-  }
-
-  //text field for send tts messages to the robot
-  SafeArea ttsField(CommandController controller) {
-    return SafeArea(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        child: Row(
-          children: [
-            Expanded(
-              child: TextField(
-                //autofocus: true,
-                controller: ttsController,
-                decoration: InputDecoration(
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(9.0)),
+        Expanded(
+          child: Row(
+            children: [
+              Expanded(
+                flex: 3,
+                child: Container(
+                  margin: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade700),
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                  hintText: 'Type Here to make the robot speak... ',
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: VideoPlayerWidget(streamUrl: _frontCameraUrl),
                 ),
               ),
-            ),
-            IconButton(
-              icon: Icon(Icons.send),
-              onPressed: () {
-                final message = ttsController.text;
-                CommandsModel command = CommandsModel(
-                  name: 'TTS',
-                  topic: 'robot/tts',
-                  payload: message,
-                );
-                controller.sendCommand(command);
-                ttsController.clear();
-              },
-            ),
-          ],
+
+              Expanded(
+                flex: 2,
+                child: GridView.builder(
+                  padding: const EdgeInsets.all(8),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    childAspectRatio: 2.5,
+                    crossAxisSpacing: 8,
+                    mainAxisSpacing: 8,
+                  ),
+                  itemCount: commandController.commands.length,
+                  itemBuilder: (context, index) {
+                    final command = commandController.commands[index];
+                    return ElevatedButton(
+                      onPressed: () => commandController.sendCommand(command),
+                      child: Text(command.name, textAlign: TextAlign.center),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
+
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: gamepadService.isConnected ? Colors.green : Colors.red,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  gamepadService.isConnected ? 'GAMEPAD' : 'NO GAMEPAD',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: TextField(
+                  controller: _ttsController,
+                  decoration: InputDecoration(
+                    hintText: 'Type message for robot to speak...',
+                    border: const OutlineInputBorder(),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                  ),
+                  onSubmitted: (_) => _sendTtsMessage(),
+                ),
+              ),
+              const SizedBox(width: 10),
+              IconButton.filled(
+                icon: const Icon(Icons.send),
+                onPressed: _sendTtsMessage,
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

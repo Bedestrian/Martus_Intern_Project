@@ -9,34 +9,56 @@ import 'services/mqtt_service.dart';
 import 'package:robot_control_app/pages/config_page.dart';
 
 void main() async {
+  //Makes sure bindings are initialized before using plugins.
   WidgetsFlutterBinding.ensureInitialized();
 
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.landscapeLeft,
     DeviceOrientation.landscapeRight,
   ]);
-
-  final mqttService = MqttService(); // your MQTT broker IP
-  final commandController = CommandController(mqttService);
-  final gamepadService = GamepadService(commandController);
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersive);
 
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => commandController),
-        ChangeNotifierProvider(create: (_) => gamepadService),
-      ],
+        ChangeNotifierProvider(create: (_) => MqttService()),
 
-      child: MyApp(),
+        ChangeNotifierProxyProvider<MqttService, CommandController>(
+          create: (context) => CommandController(context.read<MqttService>()),
+          update: (context, mqtt, previous) =>
+              previous ?? CommandController(mqtt),
+        ),
+
+        ChangeNotifierProxyProvider<CommandController, GamepadService>(
+          create: (context) =>
+              GamepadService(context.read<CommandController>()),
+          update: (context, commands, previous) =>
+              previous ?? GamepadService(commands),
+        ),
+      ],
+      child: const MyApp(),
     ),
   );
-
-  await mqttService.connect();
-  await gamepadService.start();
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<MqttService>().connect();
+      context.read<CommandController>().loadCommands();
+      context.read<GamepadService>().start();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -49,12 +71,13 @@ class MyApp extends StatelessWidget {
           brightness: Brightness.dark,
         ),
         brightness: Brightness.dark,
+        useMaterial3: true,
       ),
       initialRoute: '/',
       routes: {
-        '/': (context) => HomePage(),
-        '/control': (context) => CommandPage(),
-        '/config': (context) => ConfigPage(),
+        '/': (context) => const HomePage(),
+        '/control': (context) => const CommandPage(),
+        '/config': (context) => const ConfigPage(),
       },
     );
   }

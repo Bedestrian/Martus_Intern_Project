@@ -1,63 +1,65 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:gamepads/gamepads.dart';
-
 import '../controllers/command_controller.dart';
 import '../models/commands_model.dart';
 
 class GamepadService with ChangeNotifier {
   final CommandController controller;
-  Timer? _pollTimer;
+  StreamSubscription? _gamepadEventSubscription;
+  Timer? _periodicTimer;
   bool _isConnected = false;
+
+  double _lastLx = 0.0;
+  double _lastLy = 0.0;
 
   bool get isConnected => _isConnected;
 
   GamepadService(this.controller);
 
-  Future<void> start() async {
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final gamepads = await Gamepads.list(); // SAFE here
+  void start() {
+    _gamepadEventSubscription = Gamepads.events.listen((event) {
+      if (event.key == 'AXIS_X') {
+        _lastLx = event.value;
+      } else if (event.key == 'AXIS_Y') {
+        _lastLy = event.value;
+      }
+      // You can handle button presses here as well, e.g.,
+      // if (event.key == 'BUTTON_A' && event.value == 1.0) { ... }
+    });
 
-      _isConnected = gamepads.isNotEmpty;
-      notifyListeners();
+    _periodicTimer = Timer.periodic(const Duration(milliseconds: 50), (
+      _,
+    ) async {
+      final gamepads = await Gamepads.list();
+      final hasGamepad = gamepads.isNotEmpty;
+      if (_isConnected != hasGamepad) {
+        _isConnected = hasGamepad;
+        notifyListeners();
+      }
 
-      _pollTimer = Timer.periodic(Duration(milliseconds: 50), (_) async {
-        final gamepads = await Gamepads.list();
-        final hasGamepad = gamepads.isNotEmpty;
-        double lastLx = 0.0;
-        double lastLy = 0.0;
-
-        // Gamepads.events.listen((event) {
-        //   print('Event: ${event.key}, Value: ${event.value}');
-        // });
-
-        if (_isConnected != hasGamepad) {
-          _isConnected = hasGamepad;
-          notifyListeners();
+      if (_isConnected) {
+        if (_lastLx != 0.0 || _lastLy != 0.0) {
+          controller.sendCommand(
+            CommandsModel(
+              name: 'Joystick',
+              topic: 'robot/joystick',
+              payload: '{"lx": $_lastLx, "ly": $_lastLy}',
+            ),
+          );
         }
-
-        if (!hasGamepad) return;
-
-        Gamepads.events.listen((event) {
-          if (event.key == 'AXIS_X' || event.key == 'AXIS_Y') {
-            final lx = (event.key == 'AXIS_X') ? event.value : lastLx;
-            final ly = (event.key == 'AXIS_Y') ? event.value : lastLy;
-
-            lastLx = lx;
-            lastLy = ly;
-
-            controller.sendCommand(
-              CommandsModel(
-                name: 'Joystick',
-                topic: 'robot/joystick',
-                payload: '{"lx": $lx, "ly": $ly}',
-              ),
-            );
-          }
-        });
-      });
+      }
     });
   }
 
-  void stop() => _pollTimer?.cancel();
+  void stop() {
+    _gamepadEventSubscription?.cancel();
+    _periodicTimer?.cancel();
+  }
+
+  @override
+  void dispose() {
+    stop();
+    super.dispose();
+  }
 }
