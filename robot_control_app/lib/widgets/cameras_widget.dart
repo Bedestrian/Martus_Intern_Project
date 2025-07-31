@@ -11,10 +11,14 @@ class CamerasWidget extends StatefulWidget {
   State<CamerasWidget> createState() => _CamerasWidgetState();
 }
 
-class _CamerasWidgetState extends State<CamerasWidget> {
+class _CamerasWidgetState extends State<CamerasWidget>
+    with AutomaticKeepAliveClientMixin {
   final ConfigService _configService = ConfigService();
   List<CameraModel> _cameras = [];
   bool _isLoading = true;
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {

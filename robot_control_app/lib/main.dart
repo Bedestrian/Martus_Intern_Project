@@ -8,7 +8,7 @@ import 'pages/home_page.dart';
 import 'services/mqtt_service.dart';
 import 'package:robot_control_app/pages/config_page.dart';
 
-void main() async {
+void main() {
   //Makes sure bindings are initialized before using plugins.
   WidgetsFlutterBinding.ensureInitialized();
 

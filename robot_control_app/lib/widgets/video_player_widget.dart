@@ -16,52 +16,48 @@ class VideoPlayerWidget extends StatefulWidget {
 }
 
 class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
-  late VlcPlayerController _controller;
+  late final VlcPlayerController _controller;
   bool _isInitialized = false;
 
   @override
   void initState() {
     super.initState();
-    // If the URL is empty, don't even try to initialize.
-    if (widget.streamUrl.isNotEmpty) {
+    // Only initialize if the URL is valid.
+    if (widget.streamUrl.isNotEmpty &&
+        (widget.streamUrl.startsWith('rtsp://') ||
+            widget.streamUrl.startsWith('http'))) {
       _controller = VlcPlayerController.network(
         widget.streamUrl,
         hwAcc: HwAcc.full,
         autoPlay: true,
         options: VlcPlayerOptions(
-          video: VlcVideoOptions([
-            VlcVideoOptions.dropLateFrames(true),
-            VlcVideoOptions.skipFrames(true),
+          advanced: VlcAdvancedOptions([
+            '--network-caching=300', // Reduce network caching
+            '--drop-late-frames', // Drop frames that are too late
+            '--skip-frames', // Skip frames to catch up
           ]),
         ),
       );
-      _controller.addListener(_listen);
       _isInitialized = true;
     }
   }
 
-  // Listener to update the UI based on player state.
-  void _listen() {
-    if (!mounted) return;
-    // This will trigger a rebuild if the playing state changes.
-    setState(() {});
-  }
-
+  // The dispose method MUST be async to await the controller's disposal.
   @override
-  void dispose() async {
-    // Only dispose if the controller was actually initialized.
+  Future<void> dispose() async {
+    // First, call the parent's dispose.
+    super.dispose();
+    // Then, if the controller was initialized, properly dispose of it.
     if (_isInitialized) {
-      _controller.removeListener(_listen);
       await _controller.stop();
       await _controller.dispose();
     }
-    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    // Show a placeholder if the URL is invalid or empty.
-    if (!_isInitialized || widget.streamUrl.isEmpty) {
+    // If the controller was never initialized (e.g., empty URL), show a placeholder.
+    if (!_isInitialized) {
       return Container(
         color: Colors.black,
         child: const Center(

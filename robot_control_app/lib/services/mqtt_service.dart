@@ -23,12 +23,10 @@ class MqttService with ChangeNotifier {
     notifyListeners();
 
     if (_connectionState == MqttConnectionState.connected) {
-      // If we are connected, cancel any reconnect timer.
       _reconnectTimer?.cancel();
       _reconnectTimer = null;
       print('MQTT Reconnect timer stopped.');
     } else if (_reconnectTimer == null) {
-      // If we are not connected and there's no timer running, start one.
       print('MQTT starting reconnect timer...');
       _reconnectTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
         print('Reconnect timer fired. Attempting to connect...');
@@ -42,11 +40,7 @@ class MqttService with ChangeNotifier {
     _client = MqttServerClient(_settings.mqttIp, 'robot_controller_client');
     _client.port = _settings.mqttPort;
     _client.keepAlivePeriod = 20;
-
-    // Let our own logic handle reconnecting.
     _client.autoReconnect = false;
-
-    // Set up listeners that trigger our state management.
     _client.onConnected = () =>
         _updateConnectionState(MqttConnectionState.connected);
     _client.onDisconnected = () =>
@@ -71,7 +65,6 @@ class MqttService with ChangeNotifier {
       await _client.connect();
     } catch (e) {
       print('MQTT connection attempt failed: $e');
-      _client.disconnect();
     }
   }
 

@@ -15,7 +15,6 @@ class ConfigPage extends StatefulWidget {
 
 class _ConfigPageState extends State<ConfigPage> {
   List<CommandsModel> _commands = [];
-  List<CameraModel> _cameras = [];
   bool _isLoading = true;
 
   final ConfigService _configService = ConfigService();

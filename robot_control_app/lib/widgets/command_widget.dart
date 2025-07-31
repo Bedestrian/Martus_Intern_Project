@@ -15,12 +15,15 @@ class CommandWidget extends StatefulWidget {
   State<CommandWidget> createState() => _CommandWidgetState();
 }
 
-class _CommandWidgetState extends State<CommandWidget> {
-  // State for this widget
+class _CommandWidgetState extends State<CommandWidget>
+    with AutomaticKeepAliveClientMixin {
   late final TextEditingController _ttsController;
   final ConfigService _configService = ConfigService();
   String _frontCameraUrl = '';
   bool _isLoading = true;
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -31,14 +34,12 @@ class _CommandWidgetState extends State<CommandWidget> {
 
   @override
   void dispose() {
-    _ttsController.dispose(); // IMPORTANT: Dispose of controllers
+    _ttsController.dispose();
     super.dispose();
   }
 
-  // Load data once when the widget is created
   Future<void> _loadCameraConfig() async {
     final cameras = await _configService.loadCameras();
-    // Safely find the front camera
     final frontCamera = cameras.firstWhere(
       (cam) => cam.type == 'front',
       orElse: () => CameraModel(type: 'front', url: ''),
@@ -53,7 +54,6 @@ class _CommandWidgetState extends State<CommandWidget> {
 
   void _sendTtsMessage() {
     if (_ttsController.text.isNotEmpty) {
-      // Use context.read inside a function since we don't need to rebuild
       final commandController = context.read<CommandController>();
       commandController.sendCommand(
         CommandsModel(
@@ -69,13 +69,15 @@ class _CommandWidgetState extends State<CommandWidget> {
 
   @override
   Widget build(BuildContext context) {
-    // Use context.watch to listen for changes in providers
-    final commandController = context.watch<CommandController>();
-    final gamepadService = context.watch<GamepadService>();
+    // You must call super.build(context) when using the mixin.
+    super.build(context);
 
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
+
+    final commandController = context.watch<CommandController>();
+    final gamepadService = context.watch<GamepadService>();
 
     return Column(
       children: [
@@ -93,7 +95,6 @@ class _CommandWidgetState extends State<CommandWidget> {
                   child: VideoPlayerWidget(streamUrl: _frontCameraUrl),
                 ),
               ),
-
               Expanded(
                 flex: 2,
                 child: GridView.builder(
@@ -117,7 +118,6 @@ class _CommandWidgetState extends State<CommandWidget> {
             ],
           ),
         ),
-
         Padding(
           padding: const EdgeInsets.all(8.0),
           child: Row(
@@ -143,10 +143,10 @@ class _CommandWidgetState extends State<CommandWidget> {
               Expanded(
                 child: TextField(
                   controller: _ttsController,
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                     hintText: 'Type message for robot to speak...',
-                    border: const OutlineInputBorder(),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                    border: OutlineInputBorder(),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 12),
                   ),
                   onSubmitted: (_) => _sendTtsMessage(),
                 ),

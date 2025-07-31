@@ -7,7 +7,9 @@ import '../models/commands_model.dart';
 class GamepadService with ChangeNotifier {
   final CommandController controller;
   StreamSubscription? _gamepadEventSubscription;
-  Timer? _periodicTimer;
+  Timer? _joystickPublishTimer;
+  Timer? _connectionCheckTimer;
+
   bool _isConnected = false;
 
   double _lastLx = 0.0;
@@ -28,7 +30,21 @@ class GamepadService with ChangeNotifier {
       // if (event.key == 'BUTTON_A' && event.value == 1.0) { ... }
     });
 
-    _periodicTimer = Timer.periodic(const Duration(milliseconds: 50), (
+    _joystickPublishTimer = Timer.periodic(const Duration(milliseconds: 50), (
+      _,
+    ) {
+      if (_isConnected && (_lastLx != 0.0 || _lastLy != 0.0)) {
+        controller.sendCommand(
+          CommandsModel(
+            name: 'Joystick',
+            topic: 'robot/joystick',
+            payload: '{"lx": $_lastLx, "ly": $_lastLy}',
+          ),
+        );
+      }
+    });
+
+    _connectionCheckTimer = Timer.periodic(const Duration(seconds: 2), (
       _,
     ) async {
       final gamepads = await Gamepads.list();
@@ -37,24 +53,13 @@ class GamepadService with ChangeNotifier {
         _isConnected = hasGamepad;
         notifyListeners();
       }
-
-      if (_isConnected) {
-        if (_lastLx != 0.0 || _lastLy != 0.0) {
-          controller.sendCommand(
-            CommandsModel(
-              name: 'Joystick',
-              topic: 'robot/joystick',
-              payload: '{"lx": $_lastLx, "ly": $_lastLy}',
-            ),
-          );
-        }
-      }
     });
   }
 
   void stop() {
     _gamepadEventSubscription?.cancel();
-    _periodicTimer?.cancel();
+    _joystickPublishTimer?.cancel();
+    _connectionCheckTimer?.cancel();
   }
 
   @override
