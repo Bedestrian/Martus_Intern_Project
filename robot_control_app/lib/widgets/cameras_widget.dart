@@ -45,6 +45,8 @@ class _CamerasWidgetState extends State<CamerasWidget>
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
+
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }

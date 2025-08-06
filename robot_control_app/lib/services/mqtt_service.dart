@@ -8,8 +8,8 @@ import 'package:robot_control_app/services/config_service.dart';
 enum MqttConnectionState { connected, disconnected, connecting }
 
 class MqttService with ChangeNotifier {
-  late MqttServerClient _client;
-  late SettingsModel _settings;
+  MqttServerClient? _client;
+  SettingsModel? _settings;
   MqttConnectionState _connectionState = MqttConnectionState.disconnected;
   Timer? _reconnectTimer;
 
@@ -35,34 +35,40 @@ class MqttService with ChangeNotifier {
     }
   }
 
-  Future<void> _initialize() async {
+  Future<void> initialize() async {
+    if (_client != null) return;
     _settings = await ConfigService().loadSettings();
-    _client = MqttServerClient(_settings.mqttIp, 'robot_controller_client');
-    _client.port = _settings.mqttPort;
-    _client.keepAlivePeriod = 20;
-    _client.autoReconnect = false;
-    _client.onConnected = () =>
+    _client = MqttServerClient(_settings!.mqttIp, 'robot_controller_client');
+    _client!.port = _settings!.mqttPort;
+    _client!.keepAlivePeriod = 20;
+    _client!.autoReconnect = false;
+    _client!.onConnected = () =>
         _updateConnectionState(MqttConnectionState.connected);
-    _client.onDisconnected = () =>
+    _client!.onDisconnected = () =>
         _updateConnectionState(MqttConnectionState.disconnected);
   }
 
   Future<void> connect() async {
+    if (_client == null) {
+      print('MQTT client is not initialized. Please call initialize() first.');
+      return;
+    }
+
     if (_connectionState == MqttConnectionState.connecting ||
         _connectionState == MqttConnectionState.connected) {
       return;
     }
 
     try {
-      await _initialize();
+      await initialize();
       _updateConnectionState(MqttConnectionState.connecting);
 
       final connMessage = MqttConnectMessage()
           .withClientIdentifier('robot_controller')
           .startClean();
-      _client.connectionMessage = connMessage;
+      _client!.connectionMessage = connMessage;
 
-      await _client.connect();
+      await _client!.connect();
     } catch (e) {
       print('MQTT connection attempt failed: $e');
     }
@@ -72,7 +78,7 @@ class MqttService with ChangeNotifier {
     if (_connectionState == MqttConnectionState.connected) {
       final builder = MqttClientPayloadBuilder();
       builder.addString(message);
-      _client.publishMessage(topic, MqttQos.atLeastOnce, builder.payload!);
+      _client!.publishMessage(topic, MqttQos.atLeastOnce, builder.payload!);
     } else {
       print('Cannot publish, MQTT not connected.');
     }
@@ -81,6 +87,6 @@ class MqttService with ChangeNotifier {
   void disconnect() {
     _reconnectTimer?.cancel();
     _reconnectTimer = null;
-    _client.disconnect();
+    _client!.disconnect();
   }
 }

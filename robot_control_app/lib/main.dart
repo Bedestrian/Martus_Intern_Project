@@ -53,10 +53,18 @@ class _MyAppState extends State<MyApp> {
   void initState() {
     super.initState();
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<MqttService>().connect();
-      context.read<CommandController>().loadCommands();
-      context.read<GamepadService>().start();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final mqttService = context.read<MqttService>();
+      final commandController = context.read<CommandController>();
+      final gamepadService = context.read<GamepadService>();
+
+      await context.read<MqttService>().initialize();
+
+      if (!mounted) return;
+
+      mqttService.connect();
+      commandController.loadCommands();
+      gamepadService.start();
     });
   }
 
