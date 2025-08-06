@@ -17,15 +17,24 @@ class GamepadService with ChangeNotifier {
 
   bool get isConnected => _isConnected;
 
+  static const double _joystickDeadzone = 0.03;
+
   GamepadService(this.controller);
 
   void start() {
     _gamepadEventSubscription = Gamepads.events.listen((event) {
-      if (event.key == 'AXIS_X') {
-        _lastLx = event.value;
-      } else if (event.key == 'AXIS_Y') {
-        _lastLy = event.value;
+      double value = event.value;
+
+      if (value.abs() < _joystickDeadzone) {
+        value = 0.0;
       }
+
+      if (event.key == 'AXIS_X') {
+        _lastLx = value;
+      } else if (event.key == 'AXIS_Y') {
+        _lastLy = value;
+      }
+
       // You can handle button presses here as well, e.g.,
       // if (event.key == 'BUTTON_A' && event.value == 1.0) { ... }
     });
@@ -33,7 +42,7 @@ class GamepadService with ChangeNotifier {
     _joystickPublishTimer = Timer.periodic(const Duration(milliseconds: 50), (
       _,
     ) {
-      if (_isConnected && (_lastLx != 0.0 || _lastLy != 0.0)) {
+      if (_isConnected) {
         controller.sendCommand(
           CommandsModel(
             name: 'Joystick',
