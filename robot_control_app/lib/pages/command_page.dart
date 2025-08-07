@@ -64,7 +64,7 @@ class _CommandPageState extends State<CommandPage>
           'Control: $robotName',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
-        backgroundColor: Colors.deepPurple.shade900,
+        backgroundColor: const Color.fromARGB(255, 62, 218, 235),
         bottom: TabBar(
           controller: _tabController, //  Use your controller here
           tabs: const [

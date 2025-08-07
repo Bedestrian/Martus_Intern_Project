@@ -75,10 +75,10 @@ class _MyAppState extends State<MyApp> {
       title: 'Robot Control App',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.deepPurple.shade800,
-          brightness: Brightness.dark,
+          seedColor: const Color.fromARGB(255, 62, 218, 235),
+          brightness: Brightness.light,
         ),
-        brightness: Brightness.dark,
+        brightness: Brightness.light,
         useMaterial3: true,
       ),
       initialRoute: '/',
