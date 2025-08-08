@@ -41,4 +41,15 @@ class ConfigService {
     final file = await _settingsFile;
     await file.writeAsString(jsonEncode(settings.toJson()));
   }
+
+  Future<String> exportSettings() async {
+    final settings = await loadSettings();
+    return jsonEncode(settings.toJson());
+  }
+
+  Future<void> importSettings(String jsonString) async {
+    final jsonData = jsonDecode(jsonString);
+    final settings = SettingsModel.fromJson(jsonData);
+    await saveSettings(settings);
+  }
 }

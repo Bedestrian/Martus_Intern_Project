@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:io'; // Required for Platform class
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';

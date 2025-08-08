@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:robot_control_app/widgets/video_player_widget.dart';
-import '../models/camera_model.dart';
 
 class CamerasWidget extends StatefulWidget {
   final String frontCameraUrl;

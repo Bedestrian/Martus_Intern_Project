@@ -1,5 +1,7 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:robot_control_app/models/camera_model.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:robot_control_app/models/commands_model.dart';
 import 'package:robot_control_app/models/robot_model.dart';
 import 'package:robot_control_app/models/settings_model.dart';
@@ -17,7 +19,6 @@ class _ConfigPageState extends State<ConfigPage> {
   List<RobotModel> _robots = [];
   bool _isLoading = true;
 
-  // Map to hold the expansion state of each tile, using the robot object as the key.
   final Map<RobotModel, bool> _expansionState = {};
 
   @override
@@ -31,7 +32,6 @@ class _ConfigPageState extends State<ConfigPage> {
     if (mounted) {
       setState(() {
         _robots = settings.robots;
-        // Initialize all tiles to be collapsed.
         for (var robot in _robots) {
           _expansionState[robot] = false;
         }
@@ -53,18 +53,80 @@ class _ConfigPageState extends State<ConfigPage> {
     setState(() {
       final newRobot = RobotModel.newDefault();
       _robots.add(newRobot);
-      // Ensure the new robot has an entry in the expansion state map.
-      _expansionState[newRobot] = true; // Expand new robots by default.
+      _expansionState[newRobot] = true;
     });
   }
 
   void _deleteRobot(RobotModel robot) {
     setState(() {
       _robots.remove(robot);
-      // Remove the robot from the expansion state map as well.
       _expansionState.remove(robot);
     });
   }
+
+  Future<void> _importConfiguration() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['json'],
+    );
+
+    if (result != null && result.files.single.path != null) {
+      try {
+        final file = File(result.files.single.path!);
+        final jsonString = await file.readAsString();
+        await _configService.importSettings(jsonString);
+        await _loadData();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Configuration imported successfully!'),
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to import configuration: $e')),
+          );
+        }
+      }
+    }
+  }
+
+  // --- MODIFIED SECTION ---
+  Future<void> _exportConfiguration() async {
+    try {
+      // First, get the content to be saved.
+      final jsonString = await _configService.exportSettings();
+      // Convert the string content to bytes (Uint8List).
+      final bytes = utf8.encode(jsonString);
+
+      // Call saveFile and provide the bytes directly.
+      String? outputFile = await FilePicker.platform.saveFile(
+        dialogTitle: 'Save Your Configuration',
+        fileName: 'robot_settings.json',
+        bytes: bytes,
+      );
+
+      if (outputFile == null) {
+        // User canceled the picker.
+        return;
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Configuration saved successfully!')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to export configuration: $e')),
+        );
+      }
+    }
+  }
+  // --- END OF MODIFIED SECTION ---
 
   @override
   Widget build(BuildContext context) {
@@ -72,6 +134,16 @@ class _ConfigPageState extends State<ConfigPage> {
       appBar: AppBar(
         title: const Text('Config Manager'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.file_upload),
+            tooltip: 'Import Configuration',
+            onPressed: _importConfiguration,
+          ),
+          IconButton(
+            icon: const Icon(Icons.file_download),
+            tooltip: 'Export Configuration',
+            onPressed: _exportConfiguration,
+          ),
           IconButton(
             icon: const Icon(Icons.save),
             tooltip: 'Save All Changes',
@@ -100,15 +172,12 @@ class _ConfigPageState extends State<ConfigPage> {
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8),
       child: ExpansionTile(
-        // Use an ObjectKey for stable identification of the widget.
         key: ObjectKey(robot),
         title: Text(
           robot.name,
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-        // Control the expanded state from our map.
         initiallyExpanded: _expansionState[robot] ?? false,
-        // Update the map when the user expands or collapses the tile.
         onExpansionChanged: (isExpanded) {
           setState(() {
             _expansionState[robot] = isExpanded;
