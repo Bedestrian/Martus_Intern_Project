@@ -1,15 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:robot_control_app/controllers/command_controller.dart';
-import 'package:robot_control_app/models/camera_model.dart';
 import 'package:robot_control_app/models/commands_model.dart';
-import 'package:robot_control_app/services/config_service.dart';
 import 'package:robot_control_app/services/gamepad_service.dart';
 import 'package:robot_control_app/widgets/video_player_widget.dart';
 
 class CommandWidget extends StatefulWidget {
-  final String robotName;
-  const CommandWidget({super.key, required this.robotName});
+  final String frontCameraUrl;
+  const CommandWidget({super.key, required this.frontCameraUrl});
 
   @override
   State<CommandWidget> createState() => _CommandWidgetState();
@@ -18,9 +16,6 @@ class CommandWidget extends StatefulWidget {
 class _CommandWidgetState extends State<CommandWidget>
     with AutomaticKeepAliveClientMixin {
   late final TextEditingController _ttsController;
-  final ConfigService _configService = ConfigService();
-  String _frontCameraUrl = '';
-  bool _isLoading = true;
 
   @override
   bool get wantKeepAlive => true;
@@ -29,7 +24,6 @@ class _CommandWidgetState extends State<CommandWidget>
   void initState() {
     super.initState();
     _ttsController = TextEditingController();
-    _loadCameraConfig();
   }
 
   @override
@@ -38,24 +32,9 @@ class _CommandWidgetState extends State<CommandWidget>
     super.dispose();
   }
 
-  Future<void> _loadCameraConfig() async {
-    final cameras = await _configService.loadCameras();
-    final frontCamera = cameras.firstWhere(
-      (cam) => cam.type == 'front',
-      orElse: () => CameraModel(type: 'front', url: ''),
-    );
-    if (mounted) {
-      setState(() {
-        _frontCameraUrl = frontCamera.url;
-        _isLoading = false;
-      });
-    }
-  }
-
   void _sendTtsMessage() {
     if (_ttsController.text.isNotEmpty) {
-      final commandController = context.read<CommandController>();
-      commandController.sendCommand(
+      context.read<CommandController>().sendCommand(
         CommandsModel(
           name: 'TTS',
           topic: 'robot/tts',
@@ -69,13 +48,7 @@ class _CommandWidgetState extends State<CommandWidget>
 
   @override
   Widget build(BuildContext context) {
-    // You must call super.build(context) when using the mixin.
     super.build(context);
-
-    if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
     final commandController = context.watch<CommandController>();
     final gamepadService = context.watch<GamepadService>();
 
@@ -92,7 +65,8 @@ class _CommandWidgetState extends State<CommandWidget>
                     border: Border.all(color: Colors.grey.shade700),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: VideoPlayerWidget(streamUrl: _frontCameraUrl),
+                  // Use the URL passed from the constructor
+                  child: VideoPlayerWidget(streamUrl: widget.frontCameraUrl),
                 ),
               ),
               Expanded(

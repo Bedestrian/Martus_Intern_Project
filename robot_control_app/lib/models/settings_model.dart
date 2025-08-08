@@ -1,15 +1,20 @@
-class SettingsModel {
-  String mqttIp;
-  int mqttPort;
+import '/models/robot_model.dart';
 
-  SettingsModel({required this.mqttIp, required this.mqttPort});
+class SettingsModel {
+  List<RobotModel> robots;
+
+  SettingsModel({required this.robots});
 
   factory SettingsModel.fromJson(Map<String, dynamic> json) {
+    final List<dynamic> robotList = json['robots'] as List<dynamic>? ?? [];
     return SettingsModel(
-      mqttIp: json['mqttIp'] ?? '192.168.1.100',
-      mqttPort: json['mqttPort'] ?? 1883,
+      robots: robotList
+          .map((e) => RobotModel.fromJson(e as Map<String, dynamic>))
+          .toList(),
     );
   }
 
-  Map<String, dynamic> toJson() => {'mqttIp': mqttIp, 'mqttPort': mqttPort};
+  Map<String, dynamic> toJson() => {
+    'robots': robots.map((e) => e.toJson()).toList(),
+  };
 }
