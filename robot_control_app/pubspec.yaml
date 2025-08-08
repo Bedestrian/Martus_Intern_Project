@@ -46,7 +46,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_launcher_icons: ^0.14.4
-
+  flutter_native_splash: ^2.4.6
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
   # activated in the `analysis_options.yaml` file located at the root of your
@@ -60,8 +60,19 @@ flutter_launcher_icons:
   image_path: "assets/icon/bedestrian_logo_cropped.png"
 
   adaptive_icon_background: "#FFFFFF"
-  adaptive_icon_foreground: "assets/icon/bedestrian_logo_cropped.png"
+  adaptive_icon_foreground: "assets/icon/bedestrian_logo_cropped_foreground.png"
 
+flutter_native_splash:
+  # The background color for your splash screen
+  color: "#FFFFFF"
+  # The same padded logo image
+  image: assets/icon/bedestrian_logo_cropped_foreground.png
+
+  # You can also use the app's theme color from your app
+  # color: "#3EDAEB"
+
+  android: true
+  ios: true
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
@@ -78,7 +89,7 @@ flutter:
   #   - images/a_dot_ham.jpeg
   assets:
     - assets/
-    - assets/splash/
+    - assets/icon/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

@@ -72,7 +72,7 @@ class _HomePageState extends State<HomePage> {
                 ),
                 Padding(
                   padding: const EdgeInsets.all(70.0),
-                  child: Image.asset('assets/splash/bedestrian_logo.png'),
+                  child: Image.asset('assets/icon/bedestrian_logo.png'),
                 ),
               ],
             ),
